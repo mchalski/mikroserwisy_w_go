@@ -1,0 +1,174 @@
+Mikroserwisy w Go
+Case study na przykładzie projektu mender.io
+
+Marcin Chalczyński
+Senior Software Developer, rndity;
+marcin.chalczynski@rndity.com
+
+* Agenda
+
+- mender.io - wprowadzenie
+- mikroserwisy - definicja, obietnice, wyzwania
+- strategie i wzorce
+
+* mender.io
+
+.image mender.png _ 900
+.image headerlogo.png
+.caption http://mender.io
+
+* mender.io
+
+.image mender-arch-general.png _ 900
+
+* mender.io
+
+- założenia: golang + mikroserwisy
+- ~10 osób
+- onprem + hosted ([[https://github.com/mendersoftware]])
+- 10 mies. do *v1.0* (onprem)
+- +4 mies. do *v1.1* (hosted beta)
+
+* mikroserwisy
+
+* mikroserwisy - definicja
+- niezależne procesy
+- rozproszone w sieci
+- dobrze zdefiniowane interfejsy
+- luźno sprzężone
+
+* mikroserwisy - zalety
+- ...Amazon, Netflix, Spotify, Google
+
+.image amazon-netflix.png
+.caption appcentrica.com
+
+* mikroserwisy - odejście od monolitu
+- _big_ball_of_mud_
+- ograniczona skalowalność
+- CI
+- CD
+.image monolith.png
+
+* mikroserwisy - skalowalność
+
+.image mikroserwisy-skala.png
+
+* mikroserwisy - innowacja
+
+- dedykowane technologie (_polyglot_architecture_)
+- szybszy rollout
+- szybsze bugfixy
+- łatwiejsza poprawa wydajności
+
+* mikroserwisy - lepsza organizacja
+- usługi = zespoły
+    1. All teams will henceforth expose their data and functionality through service interfaces.
+    2. Teams must communicate with each other through these interfaces.
+    ...
+    6. Anyone who doesn't do this will be fired.
+    7. Thank you; have a nice day!
+                                                                    Jeff Bezos, Amazon CEO, 2002
+- mniejszy/spójny zakres
+- szybszy onboarding
+
+* mikroserwisy - wyzwania
+
+* Fallacies of distributed computing
+
+    1. The network is reliable.
+    ...
+    ...
+    ...
+    2. Latency is zero.
+    3. Bandwidth is infinite.
+    4. The network is secure.
+    5. Topology doesn't change.
+    6. There is one administrator.
+    7. Transport cost is zero.
+    8. The network is homogeneous.
+
+.caption 1994, Peter Deutsch
+
+* Transakcyjność
+- ...brak
+- komunikacja synchroniczna, point-to-point: problematyczna
+- komunikacja asynchroniczna? komendy/zdarzenia
+- _eventual_consistency_
+.image mikroserwisy-tx.png
+
+* Przedwczesna dekompozycja
+- intuicyjna dekompozycja = gadatliwe usługi
+- Domain Driven Design, _boundex_contexts_
+- ..._big_ball_of_distributed_mud_
+
+* Overhead
+- design
+- development
+- ci/cd
+- devops
+
+* implementacja - zagadnienia i wzorce
+
+* styl komunikacji
+
+- asynchroniczna?
+- (g)rpc?
+- *REST*
+
+* integracja
+- docker
+- dockerhub
+- docker-compose
+- hosted: kubernetes
+
+* centralne logowanie
+- niezależne strumienie logów - 6, 10, 100?
+- rozwiązanie: centralna lokalizacja, id korelacji
+- logowanie strukturalne [[https://github.com/sirupsen/logrus]]
+
+    log.WithFields(log.Fields{
+        "request_id": "dc6de4eb-65a4-4158-80a8-abafc2ce5c51",
+    }).Info("...")
+
+- stdout, ELK (elasticsearch, logstash, kibana)
+
+* centralne logowanie - ELK
+.image kibana-discover-index.gif
+.caption http://www.pipebug.com/
+
+* konfiguracja
+- [[https://12factor.net/]]
+- pliki
+- centralna - etcd
+- *env*vars*
+- [[https://github.com/spf13/viper]]
+    deployments/config.yaml:
+      listen: 8080
+      https:
+        certificate: ...
+        key: ...
+
+    docker-compose/yaml:
+        environment:
+            DEPLOYMENTS_LISTEN: ...
+            DEPLOYMENTS_HTTPS_CERTIFICATE: ...
+            DEPLOYMENTS_HTTPS_KEY: ...
+
+* api gateway
+- reguły dostępu
+- wspólny _authz_
+- throttling, ssl (security hardening)
+- _backend_for_frontend_
+.image api-gateway.png
+
+* api gateway - authz
+- [[https://jwt.io/]]
+
+.image api-gateway-auth.png
+
+* centralne monitorowanie
+- zipkin, prometheus, statsd, graphite...
+
+.image zipkin.png _ 900
+.caption https://zipkin.io/
