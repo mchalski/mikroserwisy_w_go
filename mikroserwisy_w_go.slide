@@ -1,0 +1,216 @@
+Mikroserwisy w Go
+Case study na przykładzie projektu mender.io
+
+Marcin Chalczyński
+Senior Software Developer, rndity;
+marcin.chalczynski@rndity.com
+
+* Agenda
+
+- mender.io - wprowadzenie
+- mikroserwisy - definicja, obietnice, wyzwania
+- strategie i wzorce
+
+* mender.io
+"...over-the-air software updates for embedded Linux devices"
+.link https://github.com/mendersoftware
+
+    TODO img prosty szkic systemu (urzadzenia z klientem/serwer)
+
+: (intro produktu)
+: OTA = zdalne bugfixy (bezpieczenstwo), rozwijanie produktów, upgrade produktów
+: główny use case: release urzadzen, upload updateow, aktualizacja/monitorowanie statusu)
+: rynek/nisza: brak przyjaznej konkurencji (UX)
+: klient: norwegia, background: cfengine
+
+* mender.io
+- wybór Go i mikroserwisów: a priori
+- zespół: ~10 osób (backend, embedded/integracja, qa/ops, ui)
+- model: onprem (FOSS) vs hosted
+- timeline: <ile do 1.0, ile do saas>
+
+: (stats/facts)
+: mikroserwisy wybrane ze względu na hype
+: go bardziej świadomie (klient/serwer - uwspólnienie kompetencji)
+: rndity = core team
+: flow: wersja onprem, później saas specific/multitenancy
+
+* mender.io
+    TODO img prosty szkic architektury
+
+: (jak wygląda nasz setup - bez nazw i szczegolow)
+: single page UI + 6 core services + x backing services (infrastruktura)
+: raczkująca architektura ms - brak skali, młody projekt, wystarczy do wyciągnięcia pewnych wniosków
+
+* mikroserwisy
+
+* mikroserwisy - definicja
+- niezależne procesy
+- rozproszone w sieci
+- dobrze zdefiniowane interfejsy
+
+: (definicja)
+: funkncjonalność realizują przez składanie
+: popularność pochodzi od największych graczy - amazon, google, netflix, spotify, TODO kilka przykładów real-world - statsy?)
+: dalej: często podkreślane w tym kontekście zalety/dlaczego są popularne
+
+* mikroserwisy - odejście od monolitu
+- złożoność
+- ograniczona skalowalność
+- CI/CD
+
+: z czasem niezrozumiały, crosstalk pomiędzy modułami, duża baza kodu, niejasne zależności; trudny onboarding
+: skalowany w całości, najwyższy wspólny mianownik
+: testy trwają długo, każda zmiana wymaga testowania całości
+: trudny rollout mniejszych ficzerow
+: mender: nie mieliśmy tego problemu,
+
+* mikroserwisy - skalowalność
+
+    TODO szkic
+
+: ms - tylko wybrane usługi, dowolność w liczbie instancji przydział dedykowanych zasobów (instance highcpu, highmem, etc)
+: podobnie  zinfrastrukturą pod konkretne usługi - db, cache, storage - zależy od workloadu
+: mender - po ~1roku jeszcze nie dotarliśmy do tego momentu; stress testy przewidywanej ok nawet w podst. setupie
+
+* mikroserwisy - innowacja
+
+    TODO szkic
+
+: składanie, podmiana, dodawanie nowych bez wpływu na obecny system
+: usługi standin
+: dedykowane technologie (bazy danych - elastic, grafowe, inmemory)
+
+* mikroserwisy - lepsza organizacja
+
+   TODO szkic
+
+: zespoły zarządzają konkretnymi usługami, publikują tylko swoje API
+: mender - nas to nie dotycyz, nie jesteśmy w stanie skorzystać, każdy musi znać każdą część systemu, api, oraz interakcje między nimi
+
+* mikroserwisy - wyzwania
+
+: intro - mimo zalet mają dużo nieoczywistych problemów
+
+* Fallacies of distributed computing
+    TODO - cytat
+
+: istnieje duży research o systemach rozproszonych, znane problemy
+: całkowita zmiana sposobu myślenia o systemach
+: najważniejszy wniosek - network is not reliable, usługi znikają, są przeciążone, są w trakcie podmiany/rollbacku
+: to nie błąd - system ma działać nadal, normalne zdarzenie
+
+* Transakcyjność
+- ...brak
+- komunikacja asynchroniczna?
+- event sourcing?
+
+ TODO szkic?
+
+: łancuchy wywołań mogą być przerwane w dowolnym momencie; ok w przypadku wyciągania danych, ale nie modyfikacji/akcji modyfikującej stan
+: wykładniczo wzrasta liczba scenariuszy błedu / niespójności systemu
+: asynchronicznosc - pub sub? zapewnie rozpięcie w czasie, ale:
+:   brokery mają swoją semantykę; wiadomości przychodzą wielokrotnie, kolejki sie przepełniają, dead letter queues...trudno od tego zacząć
+: event sourcing - najbardziej zaawansowana technika, i najbardziej poprawna, ale z ogromnym narzutem
+: mender - próby obejścia/minimalizacji poprzez workaroundy (szeregowanie wywołań)
+
+* Przedwczesna dekompozycja
+- intuicyjna dekompozycja jest zdradliwa
+- gadatliwe usługi
+- "big ball of distributed mud"
+
+: każdy potrafi intuicyjnie rozbić system, ale nacisk w mikroserwisach jest na niezależność - najważniejsze kryterium, usługi mają być zamknięte, "nie potrzebować" innych
+: możliwe tylko jeśli wytyczone bardzo dobre granice - hermetyzacja, bounded contexts, ukrycie wewnętrznych modeli/uwspólnienie tych właściwych
+: w przeciwnym razie - chatty interfaces, psują rollout, wymagają nadal rozumienia całości,  problemy monolitu z dodatkową wartswą - api
+: pogarsza to brak transakcyjności
+
+* Overhead
+- design
+- development
+- ci/cd
+- qa/devops
+
+: design: usługa to nie tylko kod, ale api; np. rest - jakie resourcey? jakie metody? jakie kody błędu?  jaka strategia sygnalizowania błędów (error  msg, struktura błędu, wewn?)stronicowanie? header? caching? doc swagger, wersjonowanie (semantic - czy dana zmiana zmienia api? bardziej ewidentne w kodzie/nawet w monolicie)
+: development: osobny proces, repo, main, routing, config; boilerplate'y?
+: ci/cd: setup ci per usługa
+:   testy jednostkowe nie wystarczają (mender: pokrycie 100% + 'nic nie działa' codziennie)
+:   minimum - testy integracyjne usługi (z mockami innych)
+:   nie obejdzie się bez większych testów end to end
+: devops
+:   na prod - znacznie bardziej skomplikowane (kubernetes - klaster, przydziału zasobó, moniotorowanie, skalowanie)
+:   ale nie tylko - środowisko developerskie to prawie praca devopsowa ( jak zestawić lokalnie usługi? czy wszystkie? przenaszalność między loklanymi systemami, potrzebny poziom abstrakcji - w menderze docker)
+: podobnie ze środowiskami testowymi
+
+* implementacja - zagadnienia i wzorce
+
+: wprowadzenie - wiele dobrze opisanych strategii, omówienie kilku z przykładami
+
+* styl komunikacji
+
+- synchroniczna - rest, (g)rpc
+- asynchroniczna - pubsub, event sourcing
+
+: krótko o grpc - od samego google, wydajny protokół binarny
+: mender: bardziej konserwatywny wybór - rest:
+:   chcieliśmy łatwiejszej integracji - rest to najmniejszy mianownik
+:   tylko grpc - co z frontendem?
+:   nie byliśmy pewni adopcji grpc
+:   nie mieliśmy doświadczenia w tworzeniu/dokumentowaniu takich api
+: asynchroniczna - postanowiliśmy odłożyć, dyskusje wskazały na znaczny rozrzut w doświadczeniu, za duża inwestycja a priori (kiedyś? na pewno asynchroniczne workery)
+
+* integracja
+- docker
+- dockerhub
+- docker-compose
+- kubernetes
+
+: mender: pierwszy challenge - propozycja środowiska developerskiego/onprem
+: już tutaj wprowadzenie dockera, compose, słowo o kubernetes - przyda się później
+: przegląd repo przykładowej usługi, Dockerfile, build? rozmiar (alpine)
+: docker-compose - definiowanie środowiska, przegląd plików/layerów mendera
+: hosted mender - bardziej skomplikowany setup, ale na tych samych podstawach, dobra przenaszalność
+
+* centralne logowanie
+    TODO szkic
+
+: niemożliwa analiza nawet 6 strumieni logów (korelacja), co przy 20, 100?
+: rozwiązanie: centralne logowanie
+
+* centralne logowanie - logrus
+    TODO fragment kodu, fragment outputu z mendera, screencap z kibany
+
+: logowanie strukturalne/atrybuty
+: logrus - prosty w obsłudze, wiele sinków, m.in. ELK
+: stdout wystarczy dla środowiska dev. (docker logs - pokazać?)
+
+* konfiguracja
+- pliki konfiguracyjne?
+- centralna?
+- env vars
+- 12 factor apps (link?)
+
+: pliki - ciężkie - trzymać w repo? jak podstawiać w locie dla różnych środowisk - wiele kopii?
+: centralny system - etcd, w mender na razie nie, zamiast:
+: env vars - najbardziej ulotna i elastyczna forma, trywialna podmiana,
+: prosta definicja dla różnych środowisk
+
+* konfiguracja - viper
+    TODO: snippet compose'a, snippet pliku conf
+
+: omówienie ww
+
+* api gateway
+    TODO szkic
+
+: omówienie wzorca - skupia auth, load balancing, reguły dostępu, często backend for frontend
+: demo nginx conf?
+: wspomnieć o tyk
+: mender: bez bff, klient składa zapytania, może być kłopotliwe (zachowanie reguł, 3rd party clients? dodatkowa dokumentacja)
+
+* centralne monitorowanie
+    TODO screen z prometheus/zipkin?
+
+: podobnie jak z logowaniem - jeśli coś monitorować, musi przecinać wszystkie elementy
+: mender: nie robimy tego:
+:   duży narzut, jakie metryki wybrać? jak zorganizować kod?
+:   zamiast - logowanie, daje pewne pojęcie
