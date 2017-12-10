@@ -137,6 +137,12 @@ marcin.chalczynski@rndity.com
 .image kibana-discover-index.gif
 .caption http://www.pipebug.com/
 
+* service discovery
+- adresy IP płynne (restart, aktualizacja, skalowanie)
+- centralny rejestr - _etcd_
+- _server_side_
+- _client_side_
+
 * konfiguracja
 - [[https://12factor.net/]]
 - pliki
