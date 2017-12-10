@@ -5,12 +5,23 @@ Marcin Chalczyński
 Senior Software Developer, rndity;
 marcin.chalczynski@rndity.com
 
+: about me: 10 lat doświadczenia w sumie, większość po stronie backendu,
+: projekty i produkty (greenfield vs legacy), od IoT po standardowe produkty webowe
+: technologie: linux, erlang, python,
+: od 1.5 roku głównie zaangażowany w mender.io, pierwsze wejscie w go, i na poważnie w mikroserwisy
+
 * Agenda
 
 - mender.io - wprowadzenie
 - mikroserwisy - obietnice i wyzwania
 - strategie i wzorce
 .background lama_wallpaper.jpg
+
+: theme: uzmysłowić czynniki ryzyka, nakład pracy zw. z adopcją mikroserwisów, przybliżyć praktyczną stronę implementacji w go
+: 3 części
+: przedstawienie projektu jak tło do prezentacji
+: mikroserwisy - pobieżne wprowadzenie, podsumowanie głównych driverów adopcji, skontrastowanie z nieoczywistymi, poważnymi wyzwaniami praktycznymi
+: strategie i wzorce -
 
 * mender.io
 
@@ -19,10 +30,20 @@ marcin.chalczynski@rndity.com
 .caption http://mender.io
 .background clean_wallpaper.jpg
 
+: (intro produktu)
+: miliony urzadzen embedded, OTA = zdalne bugfixy (bezpieczenstwo), rozwijanie produktów, upgrade produktów
+: główny use case: release urzadzen, upload updateow, aktualizacja/monitorowanie statusu)
+: rynek/nisza: brak przyjaznej konkurencji (UX)
+: klient: norwegia, background: cfengine
+
 * mender.io
 
 .image mender-arch-general.png _ 900
 .background clean_wallpaper.jpg
+
+: (jak wygląda nasz setup - bez nazw i szczegolow)
+: single page UI, jedyny klient + 6 core services + x backing services (infrastruktura)
+: raczkująca architektura ms - brak skali, młody projekt, wystarczy do wyciągnięcia pewnych wniosków
 
 * mender.io
 
@@ -33,6 +54,13 @@ marcin.chalczynski@rndity.com
 - +4 mies. do *v1.1* (hosted beta)
 .background clean_wallpaper.jpg
 
+: (stats/facts)
+: założenia/go: trafny wybór klienta, bardzo popularny ogromny ekosystem, wspólny dla serwer + embedded (rotacja zespołów)
+: założenia/mikroserwisy: ryzykowny, oparty na popularności; klient chciał zabezpieczyć skalę (wymagana w IoT), przygotować produkt do wymagającego rynku; brak doświadczenia po obu stronach (eksperymenty, lekko rozproszone monolity, erlang)
+: 10 osób, 3-5 po naszej stronie; rndity jest de facto częścią zespołu (całkowicie - backend, b duzo w kliencie/yocto); wybrane ze wzgl. na doświadczenie z Arynga (cały zespół, updater dla samochodów, firma kupiona przez intel)
+: model: onprem (klient ściąga, uruchamia u siebie, niska bariera wejścia) - całkowicie open source (doskonała dokumentacja); hosted: płatny, infrastruktura Amazon / s3.
+: timeline: dość długi, standardy jakości - wysoki test coverage od początku (80% unit), integracja, end-to-end
+
 * mikroserwisy
 
 * mikroserwisy - definicja
@@ -42,12 +70,29 @@ marcin.chalczynski@rndity.com
 - luźno sprzężone
 .background clean_wallpaper.jpg
 
+: (definicja)
+: spójny system, ale funkcjonalność realizowana przez...
+: niezależne: hermetyzacja, srp, zamknięty pojedynczy aspekt systemu
+: rozproszone: komunikacja sieciowa, wprowadza nowy sposób myślenia o systemie, znacznie różna od wywołań lokalnych
+: interfejsy: szczegóły operacyjne ukryte, dot. modeli danych, wewn. reprezentacji, osobnych baz danych (lub większej infrastruktury - redis),
+: ...osobnego stosu technologii (relacyjne, dokumentowe, grafowe, fts engine - elasticsearch?)
+: sprzężenie w różnych znaczeniach: w założeniu wdrażane/aktualizowane/ulepszane osobno, osobny proces CI/CD, niezależnie wersjonowane, różne zespoły? niemożliwe do osiągnięcia ale taki jest stan docelowy
+: funkcjonalność realizują przez komunikację; rozwój często przez kompozycję
+: dalej: często podkreślane w tym kontekście zalety/dlaczego są popularne
+
+
 * mikroserwisy - zalety
 - ...Amazon, Netflix, Spotify, Google
 
 .image amazon-netflix.png
 .caption appcentrica.com
 .background clean_wallpaper.jpg
+
+: popularność pochodzi od największych graczy TODO kilka przykładów real-world - statsy?)
+: setki, tysiące usług; dziesiątki tysięcy instancji; terabajty/petabajty danych
+: w tej skali załamują się wszystkie standardowe praktyki - designu, tworzenia, utrzymania, skalowania produktu;
+: nie jest możliwe zarządzanie monolitem
+: stąd przekonanie mikroserwisy=panaceum na złożoność
 
 * mikroserwisy - odejście od monolitu
 - _big_ball_of_mud_
@@ -57,10 +102,27 @@ marcin.chalczynski@rndity.com
 .image monolith.png
 .background clean_wallpaper.jpg
 
+
+: możliwe rozsądne zaprojektowanie monolitu, ale najczęściej warstwy
+: z czasem niezrozumiały, crosstalk pomiędzy modułami, duża baza kodu, niejasne zależności; trudny onboarding
+: skalowany w całości, najwyższy wspólny mianownik
+: testy trwają długo, każda zmiana wymaga testowania całości
+: trudny rollout mniejszych ficzerow
+: mender: nie mieliśmy tego problemu,
+
 * mikroserwisy - skalowalność
 
 .image mikroserwisy-skala.png
 .background clean_wallpaper.jpg
+
+: wyodrębnione procesy dają kilka możliwości
+: nadal można je wdrażać na 1nym hoscie
+: bardziej wymagające/problematyczne - dedykowana instancja - highcpu, highmemory, gpu?
+: skalowanie poprzez load balanacing na wielu instancjach (potencjalnie małych)
+: duża dowolność ze względu na użycie zasobów, obciążenie
+: to samo dotyczy reszty infrastruktury - osobne bazy danych usług, cache, - możliwość
+: indywidualnego dostrojeniu zależnie od workloadu
+: automatyzacja - autoscaling (diy w kubernetes, wielu providerów chmurowych udostępnia specyficzne)
 
 * mikroserwisy - innowacja
 
@@ -70,6 +132,12 @@ marcin.chalczynski@rndity.com
 - łatwiejsza poprawa wydajności
 
 .background clean_wallpaper.jpg
+
+: dedykowane: najczęściej bazy danych - elastic, grafowe, inmemory - dla szybkich, ulotnych danych; ale też języki programowania - zależne od pref. zespołów
+: nowa funkcjonalność: zupełnie nowe usługi, min. wpływ na obecny system; usługi składające obecną funkcjonalność?
+: również - szybsze i sprawniejsze cykle ci/cd; sprawniejsze
+: bugfixy: bugi bardziej zlokalizowane - łatwiejszy troubleshooting, szybszy testing
+: poprawa wydajności: oprócz infrastruktury - na poziomie samej usługi; np. migracja do go z cięższych środowisk (ruby, python)
 
 * mikroserwisy - lepsza organizacja
 - usługi = zespoły
@@ -84,7 +152,15 @@ marcin.chalczynski@rndity.com
 
 .background clean_wallpaper.jpg
 
+: zespoły: jedno z milczących założeń w ms; niekonieczine 1:1, ale na tym opierał się np. sukces amazon
+: zakres: każdy zespół panuje całkowicie nad całym, spójnym aspektem systemu; implementacja całkowicie ukryta; zasada dobrze zdefiniowanych
+:    interfejsów przenosi się na organizację/komunikację, daje wspólny język
+: onboarding: większa odporność na rotację
+: mender: nie ten moment, każdy musi znać wszystkie aspekty systemu
+
 * mikroserwisy - wyzwania
+
+: intro - mimo zalet mają dużo nieoczywistych problemów
 
 * Fallacies of distributed computing
 
@@ -103,6 +179,11 @@ marcin.chalczynski@rndity.com
 .caption 1994, Peter Deutsch
 .background clean_wallpaper.jpg
 
+: istnieje duży research o systemach rozproszonych, znane problemy
+: całkowita zmiana sposobu myślenia o systemach
+: najważniejszy wniosek - network is not reliable, usługi znikają, są przeciążone, są w trakcie podmiany/rollbacku
+: to nie błąd - system ma działać nadal, normalne zdarzenie
+
 * Transakcyjność
 - ...brak
 - komunikacja synchroniczna, point-to-point: problematyczna
@@ -111,12 +192,32 @@ marcin.chalczynski@rndity.com
 .image mikroserwisy-tx.png
 .background clean_wallpaper.jpg
 
+: łancuchy wywołań mogą być przerwane w dowolnym momencie; ok w przypadku wyciągania danych, ale nie modyfikacji/akcji modyfikującej stan
+: rollback - co jeśli się nie powiedzie
+: wykładniczo wzrasta liczba scenariuszy błedu / niespójności systemu; troubleshooting w ramach ops
+: asynchronicznosc - broker, pubsub? zapewnie rozpięcie w czasie, ale:
+:   brokery mają swoją semantykę; qos, sematyka potwierdzen, wiadomości przychodzą wielokrotnie, kolejki sie przepełniają, dead letter queues...:   trudno od tego zacząć
+:   eventual consistency - wpływa na cały ux, nic nie dzieje się od razu (statusy operacji?)
+: event sourcing - najbardziej zaawansowana technika, i najbardziej poprawna, ale z ogromnym narzutem
+
 * Przedwczesna dekompozycja
 - intuicyjna dekompozycja = gadatliwe usługi
 - Domain Driven Design, _boundex_contexts_
 - ..._big_ball_of_distributed_mud_
 
 .background clean_wallpaper.jpg
+
+: każdy potrafi intuicyjnie rozbić system, ale nacisk w mikroserwisach jest na niezależność - najważniejsze kryterium, usługi mają być zamknięte, "nie potrzebować" innych
+: możliwe tylko jeśli wytyczone bardzo dobre granice - hermetyzacja, bounded contexts, ukrycie wewnętrznych modeli/uwspólnienie tych właściwych
+: w przeciwnym razie - chatty interfaces, psują rollout, wymagają nadal rozumienia całości,  problemy monolitu z dodatkową wartswą - api
+: pogarsza to brak transakcyjności
+: w skali - nadal big ball of mud
+: mender:
+:   niewielki system, ale widoczne gadatliwe usługi
+:   nie da się ich rozwijać osobno, zawsze w parach, nie ma mowy o niezależnym rolloucie
+:   musimy znać dokładne szczegóły interakcji
+:   kompensujemy przez składania
+:   prefereowane podejście - monolit z modułami, ustabilizowanie interfejsów/zakresu, później oddzielenie - jeśli ma sens(skalowanie?)
 
 * Overhead
 - design
@@ -126,7 +227,24 @@ marcin.chalczynski@rndity.com
 
 .background clean_wallpaper.jpg
 
+: design: usługa to nie tylko kod, ale api; np. rest - jakie resourcey? jakie metody? jakie kody błędu?  jaka strategia sygnalizowania błędów (error  msg, struktura błędu, wewn?)stronicowanie? header? caching? doc swagger, wersjonowanie (semantic - czy dana zmiana zmienia api? bardziej ewidentne w kodzie/nawet w monolicie)
+: development: osobny proces, repo, main, routing, config; boilerplate'y?
+: ci/cd: setup ci per usługa
+:   testy jednostkowe nie wystarczają (mender: pokrycie 100% + 'nic nie działa' codziennie)
+:   minimum - testy integracyjne usługi (z mockami innych)
+:   nie obejdzie się bez większych testów end to end
+: devops
+:   na prod - znacznie bardziej skomplikowane (kubernetes - cluster, przydziału zasobów, moniotorowanie, skalowanie)
+:   ale nie tylko - środowisko developerskie to prawie praca devopsowa ( jak zestawić lokalnie usługi? czy wszystkie? przenaszalność między loklanymi systemami, potrzebny poziom abstrakcji - w menderze docker)
+: podobnie ze środowiskami testowymi
+: mender:
+:   duży narzut na dev testów (głównie - integracyjne(akceptacyjne usługi), e2e)
+:   najbardziej konkluzywne - e2e, running time 1, 1-5h; bardzo wymagające, highcpu, brakuje instancji (DO)
+:   o problemach dowiadujemy się późno, na poziomie integracji (1-2 tyg impl. ficzera, poprawianie długimi/skomplikowanymi testami)
+
 * implementacja - zagadnienia i wzorce
+
+: wprowadzenie - wiele dobrze opisanych zagadnień, strategii,  punktów decyzyjnych, omówienie kilku z przykładami
 
 * styl komunikacji
 
@@ -136,6 +254,17 @@ marcin.chalczynski@rndity.com
 
 .background clean_wallpaper.jpg
 
+: async - najlepsza, ale:
+:   1-2 tygodnie researchu/dyskusji, kilka propozycji arch.; amqp, mqtt
+: postanowiliśmy odłożyć, dyskusje wskazały na znaczny rozrzut w doświadczeniu, za duża inwestycja a priori (kiedyś? na pewno asynchroniczne workery)
+: krótko o grpc - od samego google, wydajny protokół binarny; faworyzowany przez niektóre frameworki (go-kit)
+: mender: bardziej konserwatywny wybór - rest:
+:   chcieliśmy łatwiejszej integracji - rest to najmniejszy mianownik
+:   tylko grpc - co z frontendem?
+:   nie byliśmy pewni adopcji grpc
+:   nie mieliśmy doświadczenia w tworzeniu/dokumentowaniu takich api
+:   p2p, próby obejścia/minimalizacji poprzez workaroundy (szeregowanie wywołań); case by case
+
 * integracja
 - docker
 - dockerhub
@@ -143,6 +272,13 @@ marcin.chalczynski@rndity.com
 - hosted: kubernetes
 
 .background clean_wallpaper.jpg
+
+: mender: pierwszy challenge - propozycja środowiska developerskiego/onprem, rozwijalnego w środowisko produkcyjne
+: docker: konteneryzacja, ~=vm, mechanizm cgroups; wczesniejsze doswiadczenie; demo: dockerfile usługi, build, alpine/rozmiar
+: dockerhub: push w ramach CI (demo?)
+: docker-compose - definiowanie środowiska, layery z konfiguracją, template prod, przegląd plików/layerów mendera
+:   dev/test: podstawienie customowego builda
+: hosted mender - bardziej skomplikowany setup, ale na tych samych podstawach, dobra przenaszalność
 
 * centralne logowanie
 - niezależne strumienie logów - 6, 10, 100?
@@ -157,11 +293,17 @@ marcin.chalczynski@rndity.com
 
 .background clean_wallpaper.jpg
 
+: niemożliwa analiza nawet 6 strumieni logów (korelacja), co przy 20, 100?
+: rozwiązanie: centralne logowanie, wiązanie przez request_id
+: demo: docker logs
+
 * centralne logowanie - ELK
 .image kibana-discover-index.gif
 .caption http://www.pipebug.com/
 
 .background clean_wallpaper.jpg
+
+: ogólny przykład - atrybuty, całkowicie przeszukiwalne
 
 * service discovery
 - adresy IP płynne (restart, aktualizacja, skalowanie)
@@ -191,6 +333,13 @@ marcin.chalczynski@rndity.com
 
 .background clean_wallpaper.jpg
 
+: problem: rozdział kodu od konfiguracji, szybka podmiana w różnych środowiskach; na pewno nie hardcoding
+: pliki - ciężkie - trzymać w repo? jak podstawiać w locie dla różnych środowisk - wiele kopii? secrets;
+: centralny system - etcd,
+: env vars - najbardziej ulotna i elastyczna forma, trywialna podmiana,
+:   lepsze ukrycie secrets (ukryte - w środowiskach buildowych, mogą pochodzić z bezpiecznego storageu, hashicorp vault)
+: prosta definicja dla różnych środowisk
+
 * api gateway
 - reguły dostępu
 - wspólny _authz_
@@ -200,14 +349,35 @@ marcin.chalczynski@rndity.com
 
 .background clean_wallpaper.jpg
 
+: omówienie wzorca - wielu usług nie można pozostawić bez uwspólnienia pewnych reguł
+:   reguły: wiele ep, nie wszystkie publiczne publiczne; wewnetrzne
+:   authz: usługi nie mogą same decydować o tych mechanizmach,
+:   throttling, ssl
+:   bff - dedykowane opakowania dla konkretnych klientów; inne wymagania web vs mobile (skondensowane widoki, synteza informacji)
+: mender: bez bff, klient składa zapytania, może być kłopotliwe (zachowanie reguł, 3rd party clients? dodatkowa dokumentacja)
+: demo nginx conf - ssl, reguły, authz osobno
+
 * api gateway - authz
 - [[https://jwt.io/]]
 
 .image api-gateway-auth.png
 .background clean_wallpaper.jpg
 
+: omówienie plus demo w nginx.conf
+
 * centralne monitorowanie
 - zipkin, prometheus, statsd, graphite...
 
 .image zipkin.png _ 900
 .caption https://zipkin.io/
+
+: podobnie jak z logowaniem - jeśli coś monitorować, musi przecinać wszystkie elementy
+: mender: nie robimy tego:
+:   duży narzut, jakie metryki wybrać? jak zorganizować kod?
+:   zamiast - logowanie, daje pewne pojęcie
+
+: podsumowanie
+:
+:
+:
+:
