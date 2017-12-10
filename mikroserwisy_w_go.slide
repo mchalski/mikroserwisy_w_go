@@ -139,7 +139,7 @@ marcin.chalczynski@rndity.com
 
 * service discovery
 - adresy IP płynne (restart, aktualizacja, skalowanie)
-- centralny rejestr - _etcd_
+- centralny rejestr
 - _server_side_
 - _client_side_
 
