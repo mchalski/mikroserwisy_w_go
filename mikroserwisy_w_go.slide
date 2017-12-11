@@ -8,18 +8,21 @@ marcin.chalczynski@rndity.com
 * Agenda
 
 - mender.io - wprowadzenie
-- mikroserwisy - definicja, obietnice, wyzwania
+- mikroserwisy - obietnice i wyzwania
 - strategie i wzorce
+.background lama_wallpaper.jpg
 
 * mender.io
 
 .image mender.png _ 900
 .image headerlogo.png
 .caption http://mender.io
+.background clean_wallpaper.jpg
 
 * mender.io
 
 .image mender-arch-general.png _ 900
+.background clean_wallpaper.jpg
 
 * mender.io
 
@@ -28,6 +31,7 @@ marcin.chalczynski@rndity.com
 - onprem + hosted ([[https://github.com/mendersoftware]])
 - 10 mies. do *v1.0* (onprem)
 - +4 mies. do *v1.1* (hosted beta)
+.background clean_wallpaper.jpg
 
 * mikroserwisy
 
@@ -36,12 +40,14 @@ marcin.chalczynski@rndity.com
 - rozproszone w sieci
 - dobrze zdefiniowane interfejsy
 - luźno sprzężone
+.background clean_wallpaper.jpg
 
 * mikroserwisy - zalety
 - ...Amazon, Netflix, Spotify, Google
 
 .image amazon-netflix.png
 .caption appcentrica.com
+.background clean_wallpaper.jpg
 
 * mikroserwisy - odejście od monolitu
 - _big_ball_of_mud_
@@ -49,10 +55,12 @@ marcin.chalczynski@rndity.com
 - CI
 - CD
 .image monolith.png
+.background clean_wallpaper.jpg
 
 * mikroserwisy - skalowalność
 
 .image mikroserwisy-skala.png
+.background clean_wallpaper.jpg
 
 * mikroserwisy - innowacja
 
@@ -60,6 +68,8 @@ marcin.chalczynski@rndity.com
 - szybszy rollout
 - szybsze bugfixy
 - łatwiejsza poprawa wydajności
+
+.background clean_wallpaper.jpg
 
 * mikroserwisy - lepsza organizacja
 - usługi = zespoły
@@ -71,6 +81,8 @@ marcin.chalczynski@rndity.com
                                                                     Jeff Bezos, Amazon CEO, 2002
 - mniejszy/spójny zakres
 - szybszy onboarding
+
+.background clean_wallpaper.jpg
 
 * mikroserwisy - wyzwania
 
@@ -89,6 +101,7 @@ marcin.chalczynski@rndity.com
     8. The network is homogeneous.
 
 .caption 1994, Peter Deutsch
+.background clean_wallpaper.jpg
 
 * Transakcyjność
 - ...brak
@@ -96,17 +109,22 @@ marcin.chalczynski@rndity.com
 - komunikacja asynchroniczna? komendy/zdarzenia
 - _eventual_consistency_
 .image mikroserwisy-tx.png
+.background clean_wallpaper.jpg
 
 * Przedwczesna dekompozycja
 - intuicyjna dekompozycja = gadatliwe usługi
 - Domain Driven Design, _boundex_contexts_
 - ..._big_ball_of_distributed_mud_
 
+.background clean_wallpaper.jpg
+
 * Overhead
 - design
 - development
 - ci/cd
 - devops
+
+.background clean_wallpaper.jpg
 
 * implementacja - zagadnienia i wzorce
 
@@ -116,11 +134,15 @@ marcin.chalczynski@rndity.com
 - (g)rpc?
 - *REST*
 
+.background clean_wallpaper.jpg
+
 * integracja
 - docker
 - dockerhub
 - docker-compose
 - hosted: kubernetes
+
+.background clean_wallpaper.jpg
 
 * centralne logowanie
 - niezależne strumienie logów - 6, 10, 100?
@@ -133,15 +155,21 @@ marcin.chalczynski@rndity.com
 
 - stdout, ELK (elasticsearch, logstash, kibana)
 
+.background clean_wallpaper.jpg
+
 * centralne logowanie - ELK
 .image kibana-discover-index.gif
 .caption http://www.pipebug.com/
+
+.background clean_wallpaper.jpg
 
 * service discovery
 - adresy IP płynne (restart, aktualizacja, skalowanie)
 - centralny rejestr
 - _server_side_
 - _client_side_
+
+.background clean_wallpaper.jpg
 
 * konfiguracja
 - [[https://12factor.net/]]
@@ -161,6 +189,8 @@ marcin.chalczynski@rndity.com
             DEPLOYMENTS_HTTPS_CERTIFICATE: ...
             DEPLOYMENTS_HTTPS_KEY: ...
 
+.background clean_wallpaper.jpg
+
 * api gateway
 - reguły dostępu
 - wspólny _authz_
@@ -168,10 +198,13 @@ marcin.chalczynski@rndity.com
 - _backend_for_frontend_
 .image api-gateway.png
 
+.background clean_wallpaper.jpg
+
 * api gateway - authz
 - [[https://jwt.io/]]
 
 .image api-gateway-auth.png
+.background clean_wallpaper.jpg
 
 * centralne monitorowanie
 - zipkin, prometheus, statsd, graphite...
