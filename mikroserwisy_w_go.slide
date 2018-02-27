@@ -43,7 +43,7 @@ marcin.chalczynski@rndity.com
 .background clean_wallpaper.jpg
 
 * mikroserwisy - zalety
-- ...Amazon, Netflix, Spotify, Google
+- ...Amazon, Netflix, Spotify
 
 .image amazon-netflix.png
 .caption appcentrica.com
@@ -133,6 +133,17 @@ marcin.chalczynski@rndity.com
 - asynchroniczna?
 - (g)rpc?
 - *REST*
+[[https://golang.org/pkg/net/http/]]
+
+    http.Handle("/foo", fooHandler)
+
+    http.HandleFunc("/bar", func(w http.ResponseWriter, r *http.Request) {
+        fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
+    })
+
+    log.Fatal(http.ListenAndServe(":8080", nil))
+- [[https://github.com/ant0ine/go-json-rest]]
+
 
 .background clean_wallpaper.jpg
 
@@ -165,9 +176,12 @@ marcin.chalczynski@rndity.com
 
 * service discovery
 - adresy IP płynne (restart, aktualizacja, skalowanie)
-- centralny rejestr
+- centralny rejestr - etcd, consul
 - _server_side_
 - _client_side_
+
+[[https://github.com/go-kit/kit/tree/master/sd]]
+
 
 .background clean_wallpaper.jpg
 
@@ -202,12 +216,25 @@ marcin.chalczynski@rndity.com
 
 * api gateway - authz
 - [[https://jwt.io/]]
+- [[https://github.com/dgrijalva/jwt-go]]
 
 .image api-gateway-auth.png
 .background clean_wallpaper.jpg
 
 * centralne monitorowanie
 - zipkin, prometheus, statsd, graphite...
+- [[https://github.com/go-kit/kit/tree/master/metrics]]
 
-.image zipkin.png _ 900
+.image zipkin.png _ 850
 .caption https://zipkin.io/
+
+* Links
+
+Christian Posta - The Hardest Part About Microservices
+[[http://blog.christianposta.com/microservices/the-hardest-part-about-microservices-data/]]
+
+Simon Brown - Modular Monoliths
+[[http://www.codingthearchitecture.com/presentations/sa2015-modular-monoliths]]
+
+Awesome Go
+[[https://github.com/avelino/awesome-go]]
